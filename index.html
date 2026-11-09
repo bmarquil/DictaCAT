@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DictaCAT - Generador de Dictats de Català per a Primària</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 3px solid #4F46E5; color: #4F46E5; font-weight: 600; }
+        /* Custom scrollbar for preview card */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Navbar Header -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                    <i class="fa-solid fa-pen-nib text-2xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Dicta<span class="text-yellow-300">CAT</span></h1>
+                    <p class="text-xs text-indigo-100">Generador intel·ligent de dictats per a l'educació primària</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-sm bg-indigo-700/60 px-3 py-1.5 rounded-lg border border-indigo-500/30">
+                <i class="fa-solid fa-graduation-cap text-yellow-300"></i>
+                <span>Recurs Docent de Llengua Catalana</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- API Key Banner / Warning if missing -->
+    <div id="api-key-banner" class="bg-amber-50 border-b border-amber-200 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-amber-900">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-key text-amber-600 text-base"></i>
+                <span><strong>Configuració d'API:</strong> Cal introduir una clau d'API de Gemini per poder generar dictats i escoltar àudio.</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="openApiKeyModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-all">
+                    Configurar API Key
+                </button>
+                <button onclick="openApiHelpModal()" class="bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 px-3 py-1.5 rounded-lg font-medium text-xs transition-all">
+                    Com aconseguir-la?
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Controls Section (Left Side) -->
+        <section class="lg:col-span-5 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                <div class="flex items-center border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-sliders text-indigo-600 mr-2 text-lg"></i>
+                    <h2 class="text-lg font-bold text-slate-800">Configura el teu Dictat</h2>
+                </div>
+
+                <!-- Cicle / Nivell -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">1. Cicle de Primària</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setCicle('inicial')" id="btn-inicial" class="cicle-btn py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-medium hover:border-indigo-500 focus:outline-none transition-all text-center flex flex-col items-center gap-1 bg-indigo-50 border-indigo-500 text-indigo-700">
+                            <span class="font-bold text-sm">C. Inicial</span>
+                            <span class="text-[10px] opacity-75">1r i 2n</span>
+                        </button>
+                        <button type="button" onclick="setCicle('mitja')" id="btn-mitja" class="cicle-btn py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-medium hover:border-indigo-500 focus:outline-none transition-all text-center flex flex-col items-center gap-1">
+                            <span class="font-bold text-sm">C. Mitjà</span>
+                            <span class="text-[10px] opacity-75">3r i 4t</span>
+                        </button>
+                        <button type="button" onclick="setCicle('superior')" id="btn-superior" class="cicle-btn py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-medium hover:border-indigo-500 focus:outline-none transition-all text-center flex flex-col items-center gap-1">
+                            <span class="font-bold text-sm">C. Superior</span>
+                            <span class="text-[10px] opacity-75">5è i 6è</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Objectiu Ortogràfic / Gramatical -->
+                <div>
+                    <label for="objectiu" class="block text-sm font-semibold text-slate-700 mb-2">2. Objectiu d'Aprenentatge principal</label>
+                    <select id="objectiu" class="w-full rounded-xl border-slate-200 bg-slate-50 border p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="B i V (b/v)">Diferència entre B i V</option>
+                        <option value="Sorda i Sonora (S, SS, Z, C, Ç)">Sons de la S (S, SS, Z, C, Ç)</option>
+                        <option value="Ela geminada (l.l) i L simple">Ela geminada (l.l)</option>
+                        <option value="Accentuació i Dièresi">Normes d'accentuació i dièresi</option>
+                        <option value="Apostrofació i contraccions">Apostrofació i contraccions</option>
+                        <option value="Majúscules i signes de puntuació">Majúscules i signes de puntuació</option>
+                        <option value="P/B, T/D, C/G a final de paraula">Sordet / Sonor a final de paraula (P/B, T/D...)</option>
+                        <option value="Plurals en -es / -ns / -os">Formació de plurals complexos</option>
+                        <option value="Vocabulari general i cohesió">Dictat general de repàs</option>
+                    </select>
+                </div>
+
+                <!-- Temàtica d'interès -->
+                <div>
+                    <label for="tematica" class="block text-sm font-semibold text-slate-700 mb-2">3. Temàtica o centre d'interès</label>
+                    <div class="relative">
+                        <input type="text" id="tematica" placeholder="Ex: Els dinosaures, l'espai, la tardor, contes..." class="w-full rounded-xl border-slate-200 bg-slate-50 border p-2.5 pl-9 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <i class="fa-solid fa-lightbulb text-slate-400 absolute left-3 top-3 text-sm"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <span onclick="setTematica('L\'espai i els planetes')" class="cursor-pointer text-[11px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-2.5 py-1 rounded-full text-slate-600 transition-all">+ Espai</span>
+                        <span onclick="setTematica('Animals del bosc')" class="cursor-pointer text-[11px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-2.5 py-1 rounded-full text-slate-600 transition-all">+ Animals</span>
+                        <span onclick="setTematica('Esports i equips')" class="cursor-pointer text-[11px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-2.5 py-1 rounded-full text-slate-600 transition-all">+ Esports</span>
+                        <span onclick="setTematica('Un viatge en el temps')" class="cursor-pointer text-[11px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-2.5 py-1 rounded-full text-slate-600 transition-all">+ Viatges</span>
+                    </div>
+                </div>
+
+                <!-- Tipus de Dictat -->
+                <div>
+                    <label for="tipusDictat" class="block text-sm font-semibold text-slate-700 mb-2">4. Modalitat de Dictat</label>
+                    <select id="tipusDictat" class="w-full rounded-xl border-slate-200 bg-slate-50 border p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="estàndard">Dictat Estàndard (Text continu)</option>
+                        <option value="preparat">Dictat Preparat (Text + Paraules clau prèvies)</option>
+                        <option value="buidat">Dictat Buidat / Amb forats (Adaptat per a suport)</option>
+                    </select>
+                </div>
+
+                <!-- Botó Generar -->
+                <button id="btn-generate" onclick="generateDictat()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.99]">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generar Dictat amb IA</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Preview & Output Section (Right Side) -->
+        <section class="lg:col-span-7 flex flex-col space-y-4">
+            
+            <!-- Dynamic State Box -->
+            <div id="output-box" class="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden min-h-[500px]">
+                
+                <!-- Placeholder Initial State -->
+                <div id="state-empty" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                    <div class="bg-indigo-50 p-6 rounded-full mb-4">
+                        <i class="fa-solid fa-book-open text-4xl text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-600 mb-1">Cap dictat generat encara</h3>
+                    <p class="text-sm max-w-sm text-slate-400">Selecciona les opcions de l'esquerra i fes clic al botó per crear un dictat adaptat a la teva aula.</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="state-loading" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mb-4"></div>
+                    <h3 class="text-lg font-semibold text-slate-700">Elaborant el dictat ideal...</h3>
+                    <p class="text-xs text-slate-400 mt-1">S'estan aplicant les regles ortogràfiques i ajustant el nivell de català.</p>
+                </div>
+
+                <!-- Results State -->
+                <div id="state-result" class="hidden flex-1 flex flex-col h-full">
+                    
+                    <!-- Tabs bar -->
+                    <div class="flex border-b border-slate-200 bg-slate-50/70 px-4 pt-3 space-x-4 text-sm">
+                        <button onclick="switchTab('dictat')" id="tab-btn-dictat" class="tab-active pb-3 font-medium transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-file-lines"></i> Versió Mestre / Dictat
+                        </button>
+                        <button onclick="switchTab('alumne')" id="tab-btn-alumne" class="pb-3 text-slate-500 hover:text-slate-800 font-medium transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-user-graduate"></i> Versió Alumne / Buidat
+                        </button>
+                        <button onclick="switchTab('guia')" id="tab-btn-guia" class="pb-3 text-slate-500 hover:text-slate-800 font-medium transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check"></i> Guia Pedagògica
+                        </button>
+                    </div>
+
+                    <!-- Audio Player Toolbar -->
+                    <div class="bg-indigo-50/60 border-b border-indigo-100 p-3.5 px-6 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3">
+                            <button id="btn-play-audio" onclick="playAudioDictat()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 px-4 rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm transition-all">
+                                <i id="play-icon" class="fa-solid fa-volume-high"></i>
+                                <span id="play-text">Escoltar Dictat (TTS)</span>
+                            </button>
+                            <span id="audio-loading" class="hidden text-xs text-indigo-600 flex items-center gap-1.5 font-medium">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Generant àudio...
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button onclick="copyToClipboard()" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 p-2 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+                                <i class="fa-regular fa-copy"></i> Copiar
+                            </button>
+                            <button onclick="printDictat()" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 p-2 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+                                <i class="fa-solid fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab Views Content -->
+                    <div class="p-6 flex-1 overflow-y-auto space-y-4">
+                        
+                        <!-- TAB 1: Dictat Principal (Mestre) -->
+                        <div id="tab-dictat" class="space-y-4">
+                            <div class="bg-amber-50/80 border border-amber-200/60 rounded-xl p-4 flex items-start gap-3">
+                                <i class="fa-solid fa-circle-info text-amber-500 text-base mt-0.5"></i>
+                                <div class="text-xs text-amber-900 leading-relaxed">
+                                    <strong id="res-titol" class="font-bold text-sm block mb-0.5">--</strong>
+                                    <span id="res-metadades" class="text-amber-800">--</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prose max-w-none">
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Text del dictat</h3>
+                                <div id="res-text-mestre" class="bg-slate-50 border border-slate-200 p-5 rounded-xl text-base leading-relaxed font-normal text-slate-800 whitespace-pre-line">
+                                    <!-- Dynamic Content -->
+                                </div>
+                            </div>
+
+                            <div id="box-paraules-clau" class="mt-4 pt-4 border-t border-slate-100">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Paraules Clau a Treballar</h4>
+                                <div id="res-paraules" class="flex flex-wrap gap-2">
+                                    <!-- Dynamic Keywords -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: Versió Alumne / Dictat Buidat -->
+                        <div id="tab-alumne" class="hidden space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Dictat adaptat per a l'alumne</h3>
+                                <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Ideal per a atenció a la diversitat</span>
+                            </div>
+                            <div id="res-text-alumne" class="bg-slate-50 border border-slate-200 p-5 rounded-xl text-base leading-loose font-normal text-slate-800 whitespace-pre-line font-mono">
+                                <!-- Dynamic Content for Students -->
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: Guia Pedagògica -->
+                        <div id="tab-guia" class="hidden space-y-4">
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Aspectes Ortogràfics i Suggeriments</h3>
+                            <div id="res-guia-pedagogica" class="bg-indigo-50/40 border border-indigo-100 p-5 rounded-xl text-sm leading-relaxed text-slate-700 space-y-3">
+                                <!-- Dynamic Pedagogical Guide -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Configuració API Key -->
+    <div id="modal-api-key" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 relative animate-fade-in">
+            <button onclick="closeApiKeyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 text-indigo-600">
+                <div class="bg-indigo-50 p-2.5 rounded-xl">
+                    <i class="fa-solid fa-key text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Configura la teva Gemini API Key</h3>
+            </div>
+
+            <p class="text-xs text-slate-500 leading-relaxed">
+                DictaCAT utilitza els models de Google Gemini per redactar els dictats i generar l'àudio TTS en català. La teva clau es guarda només localment al teu navegador.
+            </p>
+
+            <div>
+                <label for="input-api-key" class="block text-xs font-semibold text-slate-700 mb-1">Google Gemini API Key</label>
+                <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono">
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="openApiHelpModal()" class="text-xs text-indigo-600 hover:underline font-medium">
+                    <i class="fa-regular fa-circle-question mr-1"></i> Com puc aconseguir-ne una?
+                </button>
+                <button onclick="saveApiKey()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm">
+                    Desar Clau
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Instruccions Obtenció API Key -->
+    <div id="modal-api-help" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-5 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeApiHelpModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 text-indigo-600">
+                <div class="bg-indigo-50 p-2.5 rounded-xl">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Com aconseguir una API Key de Gemini</h3>
+                    <p class="text-xs text-slate-400">És 100% gratuïta i només et cal un compte de Google</p>
+                </div>
+            </div>
+
+            <ol class="space-y-4 text-xs text-slate-600">
+                <li class="flex items-start space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                    <div>
+                        <p class="font-semibold text-slate-800 mb-0.5">Accedeix a Google AI Studio</p>
+                        <p class="mb-1">Entra a la plataforma oficial per a desenvolupadors de Google:</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-indigo-600 underline font-semibold flex items-center gap-1">
+                            aistudio.google.com/app/apikey <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                    <div>
+                        <p class="font-semibold text-slate-800 mb-0.5">Inicia sessió</p>
+                        <p>Entra amb el teu compte personal de Google (Gmail) o de centre educatiu.</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                    <div>
+                        <p class="font-semibold text-slate-800 mb-0.5">Crea la teva clau</p>
+                        <p>Fes clic al botó blava <strong>"Create API key"</strong> i tria un projecte per defecte.</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">4</span>
+                    <div>
+                        <p class="font-semibold text-slate-800 mb-0.5">Copia la clau a DictaCAT</p>
+                        <p>Copia el text generat (comença per <code>AIzaSy...</code>) i enganxa'l al camp de configuració de DictaCAT.</p>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeApiHelpModal(); openApiKeyModal();" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm">
+                    Entès, anar a introduir clau
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div>
+                <strong>DictaCAT</strong> &copy; Generador de Recursos Educatius de Llengua Catalana per a Primària.
+            </div>
+            <div class="flex items-center space-x-4">
+                <span>Creat per <strong class="text-slate-700">Bernat Marquilles</strong></span>
+                <a href="https://github.com/bmarquil" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-medium bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 transition-all">
+                    <i class="fa-brands fa-github text-sm"></i> GitHub: @bmarquil
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // App State
+        let currentCicle = 'inicial';
+        let generatedData = null;
+        let audioPlayer = null;
+
+        // API Key Management
+        function getStoredApiKey() {
+            return localStorage.getItem('dictacat_gemini_api_key') || "";
+        }
+
+        function checkApiKeyStatus() {
+            const key = getStoredApiKey();
+            const banner = document.getElementById('api-key-banner');
+            if (key && key.trim().length > 0) {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+            }
+        }
+
+        function openApiKeyModal() {
+            document.getElementById('input-api-key').value = getStoredApiKey();
+            document.getElementById('modal-api-key').classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('modal-api-key').classList.add('hidden');
+        }
+
+        function openApiHelpModal() {
+            closeApiKeyModal();
+            document.getElementById('modal-api-help').classList.remove('hidden');
+        }
+
+        function closeApiHelpModal() {
+            document.getElementById('modal-api-help').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const inputVal = document.getElementById('input-api-key').value.trim();
+            if (!inputVal) {
+                alert("Si us plau, introdueix una API Key vàlida.");
+                return;
+            }
+            localStorage.setItem('dictacat_gemini_api_key', inputVal);
+            closeApiKeyModal();
+            checkApiKeyStatus();
+            alert("API Key desada correctament!");
+        }
+
+        // On Load Check
+        window.addEventListener('DOMContentLoaded', () => {
+            checkApiKeyStatus();
+        });
+
+        // UI Helpers
+        function setCicle(cicle) {
+            currentCicle = cicle;
+            document.querySelectorAll('.cicle-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-50', 'border-indigo-500', 'text-indigo-700');
+            });
+            const selectedBtn = document.getElementById(`btn-${cicle}`);
+            selectedBtn.classList.add('bg-indigo-50', 'border-indigo-500', 'text-indigo-700');
+        }
+
+        function setTematica(text) {
+            document.getElementById('tematica').value = text;
+        }
+
+        function switchTab(tabName) {
+            ['dictat', 'alumne', 'guia'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).classList.remove('tab-active');
+                document.getElementById(`tab-btn-${t}`).classList.add('text-slate-500');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.add('tab-active');
+            activeBtn.classList.remove('text-slate-500');
+        }
+
+        // Generate Dictation using Gemini Text API (Structured Output)
+        async function generateDictat() {
+            const apiKey = getStoredApiKey();
+            if (!apiKey) {
+                openApiKeyModal();
+                return;
+            }
+
+            const objectiu = document.getElementById('objectiu').value;
+            const tematica = document.getElementById('tematica').value || "Vida quotidiana i escola";
+            const tipusDictat = document.getElementById('tipusDictat').value;
+
+            // Show Loading
+            document.getElementById('state-empty').classList.add('hidden');
+            document.getElementById('state-result').classList.add('hidden');
+            document.getElementById('state-loading').classList.remove('hidden');
+
+            const cicleText = {
+                'inicial': 'Cicle Inicial de primària (6-8 anys). Frases curtes, estructures senzilles, vocabulari accessible.',
+                'mitja': 'Cicle Mitjà de primària (8-10 anys). Text de 4-6 línies, complexitat mitjana.',
+                'superior': 'Cicle Superior de primària (10-12 anys). Text de 6-9 línies, ortografia acurada i coordinació de frases.'
+            }[currentCicle];
+
+            const systemPrompt = `Ets un mestre expert en didàctica de la Llengua Catalana per a l'educació primària. 
+Genera un dictat educatiu adaptat exactament al cicle, objectiu i temàtica sol·licitats. Respon STRICTAMENT en format JSON.`;
+
+            const userQuery = `Crea un dictat en català amb les següents especificacions:
+- Nivell: ${cicleText}
+- Objectiu Ortogràfic/Gramatical: ${objectiu}
+- Temàtica / Centre d'interès: ${tematica}
+- Modalitat sol·licitada: ${tipusDictat}
+
+Estructura de la resposta JSON necessària:
+{
+  "titol": "Títol breu i atractiu del dictat",
+  "textMestre": "El text complet del dictat per llegir el mestre.",
+  "textAlumne": "El mateix text però substituint les paraules claus que treballen l'objectiu ortogràfic per forats com _____ [p.ex. la b/v o la s/z/ss/ç o accents].",
+  "paraulesClau": ["paraula1", "paraula2", "paraula3", "paraula4"],
+  "guiaPedagogica": "Una explicació breu (2-3 frases) per al mestre sobre quines regles d'ortografia catalana es treballen i com abordar-les amb els alumnes."
+}`;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            titol: { type: "STRING" },
+                            textMestre: { type: "STRING" },
+                            textAlumne: { type: "STRING" },
+                            paraulesClau: { type: "ARRAY", items: { type: "STRING" } },
+                            guiaPedagogica: { type: "STRING" }
+                        },
+                        propertyOrdering: ["titol", "textMestre", "textAlumne", "paraulesClau", "guiaPedagogica"]
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error.message || "Error a la resposta de l'API");
+                }
+
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (jsonText) {
+                    generatedData = JSON.parse(jsonText);
+                    renderResults(objectiu, tematica);
+                } else {
+                    throw new Error("Resposta invàlida de l'API");
+                }
+            } catch (err) {
+                console.error("Error generant el dictat:", err);
+                alert(`Error en generar el dictat: ${err.message}. Comprova que la teva API key sigui vàlida.`);
+                document.getElementById('state-loading').classList.add('hidden');
+                document.getElementById('state-empty').classList.remove('hidden');
+            }
+        }
+
+        // Render Generated Data into UI
+        function renderResults(objectiu, tematica) {
+            document.getElementById('state-loading').classList.add('hidden');
+            document.getElementById('state-result').classList.remove('hidden');
+
+            document.getElementById('res-titol').innerText = generatedData.titol;
+            document.getElementById('res-metadades').innerText = `Cicle: ${currentCicle.toUpperCase()} | Objectiu: ${objectiu} | Temàtica: ${tematica}`;
+            
+            document.getElementById('res-text-mestre').innerText = generatedData.textMestre;
+            document.getElementById('res-text-alumne').innerText = generatedData.textAlumne;
+            document.getElementById('res-guia-pedagogica').innerText = generatedData.guiaPedagogica;
+
+            // Render keywords tags
+            const paraulesContainer = document.getElementById('res-paraules');
+            paraulesContainer.innerHTML = '';
+            (generatedData.paraulesClau || []).forEach(p => {
+                const badge = document.createElement('span');
+                badge.className = 'px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 font-medium rounded-lg text-xs';
+                badge.innerText = p;
+                paraulesContainer.appendChild(badge);
+            });
+
+            // Reset tab to default
+            switchTab('dictat');
+        }
+
+        // Convert PCM 16-bit to WAV Blob for Audio playback
+        function pcmToWav(pcm16Data, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16Data.length * 2);
+            const view = new DataView(buffer);
+
+            /* RIFF identifier */
+            writeString(view, 0, 'RIFF');
+            /* RIFF chunk length */
+            view.setUint32(4, 36 + pcm16Data.length * 2, true);
+            /* RIFF type */
+            writeString(view, 8, 'WAVE');
+            /* format chunk identifier */
+            writeString(view, 12, 'fmt ');
+            /* format chunk length */
+            view.setUint32(16, 16, true);
+            /* sample format (raw) */
+            view.setUint16(20, 1, true);
+            /* channel count */
+            view.setUint16(22, 1, true);
+            /* sample rate */
+            view.setUint32(24, sampleRate, true);
+            /* byte rate (sample rate * block align) */
+            view.setUint32(28, sampleRate * 2, true);
+            /* block align (channel count * bytes per sample) */
+            view.setUint16(32, 2, true);
+            /* bits per sample */
+            view.setUint16(34, 16, true);
+            /* data chunk identifier */
+            writeString(view, 36, 'data');
+            /* data chunk length */
+            view.setUint32(40, pcm16Data.length * 2, true);
+
+            // Write PCM samples
+            let offset = 44;
+            for (let i = 0; i < pcm16Data.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16Data[i], true);
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // Helper to convert base64 to ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // TTS with Gemini 2.5 Flash TTS
+        async function playAudioDictat() {
+            if (!generatedData || !generatedData.textMestre) return;
+
+            const apiKey = getStoredApiKey();
+            if (!apiKey) {
+                openApiKeyModal();
+                return;
+            }
+
+            // Stop audio if playing
+            if (audioPlayer && !audioPlayer.paused) {
+                audioPlayer.pause();
+                updateAudioUI(false);
+                return;
+            }
+
+            const playBtn = document.getElementById('btn-play-audio');
+            const loadingSpan = document.getElementById('audio-loading');
+
+            loadingSpan.classList.remove('hidden');
+            playBtn.disabled = true;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            const promptText = `Llegeix a poc a poc i amb molt bona vocalització en català per a un dictat escolar el text següent:\n\n${generatedData.textMestre}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: promptText }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Aoede" } // Clear breezey/gentle voice
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType) {
+                    const match = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = match ? parseInt(match[1], 10) : 24000;
+                    
+                    const pcmBuffer = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmBuffer);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    audioPlayer = new Audio(audioUrl);
+                    audioPlayer.play();
+                    
+                    updateAudioUI(true);
+
+                    audioPlayer.onended = () => {
+                        updateAudioUI(false);
+                    };
+                } else {
+                    alert("No s'ha pogut generar l'àudio del dictat.");
+                }
+            } catch (err) {
+                console.error("Error TTS:", err);
+                alert(`Error en la lectura per veu: ${err.message}`);
+            } finally {
+                loadingSpan.classList.add('hidden');
+                playBtn.disabled = false;
+            }
+        }
+
+        function updateAudioUI(isPlaying) {
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            if (isPlaying) {
+                icon.className = 'fa-solid fa-pause';
+                text.innerText = 'Aturar Lectura';
+            } else {
+                icon.className = 'fa-solid fa-volume-high';
+                text.innerText = 'Escoltar Dictat (TTS)';
+            }
+        }
+
+        // Copy active tab text to clipboard
+        function copyToClipboard() {
+            if (!generatedData) return;
+            
+            let textToCopy = "";
+            const isAlumne = !document.getElementById('tab-alumne').classList.contains('hidden');
+            const isGuia = !document.getElementById('tab-guia').classList.contains('hidden');
+
+            if (isAlumne) {
+                textToCopy = `${generatedData.titol} (Dictat Alumne)\n\n${generatedData.textAlumne}`;
+            } else if (isGuia) {
+                textToCopy = `Guia Pedagògica: ${generatedData.titol}\n\n${generatedData.guiaPedagogica}`;
+            } else {
+                textToCopy = `${generatedData.titol}\n\n${generatedData.textMestre}\n\nParaules clau: ${generatedData.paraulesClau.join(', ')}`;
+            }
+
+            // Using fallback method for iFrame clipboard compatibility
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textToCopy;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            alert("Text copiat al portapapers!");
+        }
+
+        // Print functionality formatted for teachers/students
+        function printDictat() {
+            if (!generatedData) return;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ca">
+                <head>
+                    <title>${generatedData.titol} - DictaCAT</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                        h1 { font-size: 22px; margin-bottom: 5px; color: #1e3a8a; }
+                        .meta { font-size: 12px; color: #666; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+                        .box { font-size: 16px; border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #fafafa; margin-bottom: 20px; }
+                        .section-title { font-size: 14px; font-weight: bold; margin-top: 20px; text-transform: uppercase; color: #475569; }
+                        .keywords { font-size: 14px; color: #2563eb; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${generatedData.titol}</h1>
+                    <div class="meta">Generat amb DictaCAT per Bernat Marquilles | Educació Primària</div>
+                    
+                    <div class="section-title">Versió per al Mestre / Lectura:</div>
+                    <div class="box">${generatedData.textMestre}</div>
+
+                    <div class="section-title">Paraules Clau:</div>
+                    <p class="keywords">${generatedData.paraulesClau.join(' • ')}</p>
+
+                    <hr style="margin: 40px 0; border: 1px dashed #ccc;" />
+
+                    <h1>${generatedData.titol} (Nom alumne: ___________________)</h1>
+                    <div class="section-title">Dictat Buidat / Activitat:</div>
+                    <div class="box" style="line-height: 2.2;">${generatedData.textAlumne}</div>
+                    
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
+</body>
+</html>
