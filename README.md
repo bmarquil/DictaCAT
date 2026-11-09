@@ -65,7 +65,8 @@ Perquè DictaCAT pugui generar els dictats i la veu, cal introduir una clau d'AP
 ## 🛠️ Instal·lació i ús local
 
 L'aplicació és 100% *client-side* i no requereix servidors ni gestors de paquets com `npm`.
-
+Utilitza des del navegador: (https://bmarquil.github.io/DictaCAT/)
+o bé baixa la versió local:
 1. **Clona el repositori:**
    ```bash
    git clone https://github.com/bmarquil/DictaCAT.git
